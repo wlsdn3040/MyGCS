@@ -9,3 +9,4 @@ include ':StarterApp'
 
 project(':Mavlink').projectDir = new File('dependencyLibs/Mavlink')
 project(':StarterApp').projectDir = new File('samples/StarterApp')
+include ':mygcs'
