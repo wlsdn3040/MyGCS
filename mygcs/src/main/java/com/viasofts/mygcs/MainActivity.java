@@ -1,6 +1,7 @@
 package com.viasofts.mygcs;
 
 import android.content.Context;
+import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -16,6 +17,9 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.naver.maps.map.MapView;
+import com.naver.maps.map.NaverMap;
+import com.naver.maps.map.OnMapReadyCallback;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.interfaces.DroneListener;
@@ -26,10 +30,12 @@ import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.companion.solo.SoloAttributes;
 import com.o3dr.services.android.lib.drone.companion.solo.SoloState;
+import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
+import com.o3dr.services.android.lib.drone.connection.ConnectionType;
 import com.o3dr.services.android.lib.drone.property.Type;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 
-public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener {
+public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener, OnMapReadyCallback {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
@@ -37,9 +43,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private int droneType = Type.TYPE_UNKNOWN;
     private ControlTower controlTower;
     private final Handler handler = new Handler();
-
     private static final int DEFAULT_UDP_PORT = 14550;
     private static final int DEFAULT_USB_BAUD_RATE = 57600;
+    private NaverMap mNaverMap;
+    private MapView mapView;
 
     //private Spinner modeSelector;
 
@@ -47,13 +54,18 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+
         super.onCreate(savedInstanceState);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
         setContentView(R.layout.activity_main);
+
+        mapView = (MapView) findViewById(R.id.map_view);
+        mapView.onCreate(savedInstanceState);
+        mapView.getMapAsync(this);
 
         final Context context = getApplicationContext();
         this.controlTower = new ControlTower(context);
         this.drone = new Drone(context);
-
 /*
         this.modeSelector = (Spinner) findViewById(R.id.modeSelect);
         this.modeSelector.setOnItemSelectedListener(new Spinner.OnItemSelectedListener() {
@@ -61,7 +73,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                 onFlightModeSelected(view);
             }
-
             @Override
             public void onNothingSelected(AdapterView<?> parent) {
                 // Do nothing
@@ -95,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
-/*
+                /*
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
  */
@@ -194,5 +205,20 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         mainHandler.post(runnable);
     }
 
+    public void onBtnConnectTap(View view) {
+        if (this.drone.isConnected()) {
+            this.drone.disconnect();
+        } else {
 
+            ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
+            this.drone.connect(connectionParams);
+
+        }
+    }
+
+
+    @Override
+    public void onMapReady(@NonNull NaverMap naverMap) {
+
+    }
 }
