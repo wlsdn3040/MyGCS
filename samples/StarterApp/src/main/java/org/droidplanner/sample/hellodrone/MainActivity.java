@@ -376,7 +376,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             // Connect
             alertUser("Connect to a drone first");
         } else {
-            // Connected but not Armed
+            // Connected but not Armeds
             VehicleApi.getApi(this.drone).arm(true, false, new SimpleCommandListener() {
                 @Override
                 public void onError(int executionError) {

@@ -288,12 +288,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 public void onError(int executionError) {
                     alertUser("Unable to land the vehicle.");
                 }
-
                 @Override
                 public void onTimeout() {
                     alertUser("Unable to land the vehicle.");
                 }
             });
+
         } else if (vehicleState.isArmed()) {
 
             ControlApi.getApi(this.drone).takeoff(10, new AbstractCommandListener() {
