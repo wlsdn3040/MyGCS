@@ -13,6 +13,7 @@ import com.MAVLink.ardupilotmega.msg_mag_cal_report;
 import com.MAVLink.ardupilotmega.msg_mount_configure;
 import com.MAVLink.ardupilotmega.msg_mount_status;
 import com.MAVLink.ardupilotmega.msg_radio;
+import com.MAVLink.common.msg_global_position_int;
 import com.MAVLink.common.msg_named_value_int;
 import com.MAVLink.common.msg_raw_imu;
 import com.MAVLink.common.msg_rc_channels_raw;
@@ -125,6 +126,12 @@ public abstract class ArduPilot extends GenericMavLinkDrone {
 
             notifyDroneEvent(DroneInterfaces.DroneEventsType.SPEED);
         }
+    }
+
+    // 상대고도값 2021-07-20 추가
+    protected void setAltitudeAbsoluteAndRelative(double absoluteAlt, double relativeAlt) {
+        this.altitude.setAltitudeAbsoluteAndRelative(absoluteAlt, relativeAlt);
+        notifyDroneEvent(DroneInterfaces.DroneEventsType.ALTITUDE);
     }
 
     @Override
@@ -455,6 +462,14 @@ public abstract class ArduPilot extends GenericMavLinkDrone {
                 case msg_mag_cal_progress.MAVLINK_MSG_ID_MAG_CAL_PROGRESS:
                 case msg_mag_cal_report.MAVLINK_MSG_ID_MAG_CAL_REPORT:
                     getMagnetometerCalibration().processCalibrationMessage(message);
+                    break;
+
+                    // 상대고도값 2021-07-20 추가
+                case msg_global_position_int.MAVLINK_MSG_ID_GLOBAL_POSITION_INT:
+                    msg_global_position_int alt = (msg_global_position_int)message;
+                    if(alt != null) {
+                        setAltitudeAbsoluteAndRelative((double) alt.alt/1000, (double)alt.relative_alt / 1000);
+                    }
                     break;
 
                 default:

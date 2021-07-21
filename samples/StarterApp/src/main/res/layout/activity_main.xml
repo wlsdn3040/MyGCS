@@ -141,6 +141,7 @@
                             android:paddingTop="5dp"
                             android:text="0m"
                             android:textAppearance="?android:attr/textAppearanceMedium" />
+
                     </TableRow>
 
                     <TableRow

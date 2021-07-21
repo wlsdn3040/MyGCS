@@ -34,8 +34,184 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="onBtnConnectTap"
-        android:text="Button"
+        android:text="연결"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <Button
+        android:id="@+id/button2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="onArmButtonTap"
+        android:text="시동"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/button1" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="29dp"
+        android:background="#80000000"
+        android:orientation="horizontal"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TableRow
+            android:id="@+id/row1"
+            android:layout_width="106dp"
+            android:layout_height="fill_parent">
+
+            <TextView
+                android:id="@+id/altitudeLabelTextView"
+                android:layout_width="52dp"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="고도:" />
+
+            <TextView
+                android:id="@+id/altitudeValueTextView"
+                android:layout_width="49dp"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_gravity="left"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="0m" />
+
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/row2"
+            android:layout_width="133dp"
+            android:layout_height="fill_parent">
+
+            <TextView
+                android:id="@+id/speedLabelTextView"
+                android:layout_width="53dp"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="속도:" />
+
+            <TextView
+                android:id="@+id/speedValueTextView"
+                android:layout_width="65dp"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_gravity="left"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="0m/s" />
+
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/row3"
+            android:layout_width="158dp"
+            android:layout_height="fill_parent">
+
+            <TextView
+                android:id="@+id/vehicleLabelTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:layout_column="0"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="모드:" />
+
+            <Spinner
+                android:id="@+id/modeSelect"
+                android:layout_width="fill_parent"
+                android:layout_height="42dp"
+                android:layout_column="1"
+                android:gravity="center"
+                android:spinnerMode="dropdown" />
+
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/row4"
+            android:layout_width="95dp"
+            android:layout_height="fill_parent">
+
+            <TextView
+                android:id="@+id/voltageLabelTextView"
+                android:layout_width="41dp"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="전압:" />
+
+            <TextView
+                android:id="@+id/voltageValueTextView"
+                android:layout_width="43dp"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_gravity="left"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="0V" />
+
+
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/row5"
+            android:layout_width="119dp"
+            android:layout_height="fill_parent">
+
+            <TextView
+                android:id="@+id/satelliteLabelTextView"
+                android:layout_width="41dp"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="위성:" />
+
+            <TextView
+                android:id="@+id/satelliteValueTextView"
+                android:layout_width="30dp"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_gravity="left"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="0개" />
+
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/row6"
+            android:layout_width="120dp"
+            android:layout_height="fill_parent">
+
+            <TextView
+                android:id="@+id/YAWLabelTextView"
+                android:layout_width="53dp"
+                android:layout_height="wrap_content"
+                android:layout_column="0"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="YAW:" />
+
+            <TextView
+                android:id="@+id/YAWValueTextView"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_column="1"
+                android:layout_gravity="left"
+                android:paddingTop="5dp"
+                android:paddingBottom="5dp"
+                android:text="0deg" />
+
+        </TableRow>
+
+
+    </LinearLayout>
 
 </android.support.constraint.ConstraintLayout>
