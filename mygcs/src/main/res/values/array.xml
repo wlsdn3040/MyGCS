@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="connection_type">
+        <item>USB</item>
+        <item>UDP</item>
+        <item>TCP</item>
+        <item>BLUETOOTH</item>
+    </string-array>
+</resources>

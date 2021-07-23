@@ -1,13 +1,16 @@
 package com.viasofts.mygcs;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.SurfaceTexture;
+import android.net.Uri;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 import android.view.Surface;
 import android.view.TextureView;
@@ -18,9 +21,11 @@ import android.widget.Button;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import com.naver.maps.geometry.LatLng;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
+import com.naver.maps.map.overlay.Marker;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
@@ -29,6 +34,7 @@ import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.android.client.utils.video.MediaCodecManager;
+import com.o3dr.services.android.lib.coordinate.LatLong;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.companion.solo.SoloAttributes;
@@ -47,7 +53,9 @@ import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
-
+import com.viasofts.mygcs.activites.helpers.BluetoothDevicesActivity;
+import com.viasofts.mygcs.utils.TLogUtils;
+import com.viasofts.mygcs.utils.prefs.DroidPlannerPrefs;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener, OnMapReadyCallback {
@@ -64,6 +72,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private MapView mapView;
 
     private Spinner modeSelector;
+
+    ConnectionParameter connParams;
 
     Handler mainHandler;
 
@@ -121,27 +131,27 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         switch (event) {
             case AttributeEvent.STATE_CONNECTED:
                 alertUser("Drone Connected");
-                /*
+
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
- */
+
                 checkSoloState();
 
                 break;
 
             case AttributeEvent.STATE_DISCONNECTED:
                 alertUser("Drone Disconnected");
-/*
+
                 updateConnectedButton(this.drone.isConnected());
                 updateArmButton();
- */
+
                 break;
 
             case AttributeEvent.STATE_UPDATED:
             case AttributeEvent.STATE_ARMING:
-/*
+
                 updateArmButton();
- */
+
                 break;
 
             case AttributeEvent.TYPE_UPDATED:
@@ -180,6 +190,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
             case AttributeEvent.HOME_UPDATED:
 //                updateDistanceFromHome();
+                break;
+            case AttributeEvent.GPS_POSITION:
+                updateGPS();
                 break;
 
             default:
@@ -253,7 +266,33 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             this.drone.disconnect();
         } else {
             ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
+//            this.drone.connect(connParams);
             this.drone.connect(connectionParams);
+        }
+    }
+
+    public void tapTestBTN(View view){
+            /*
+            ConnectionParameter connectionParams
+                    = ConnectionParameter.newUdpConnection(null);
+            this.drone.connect(connectionParams);
+             */
+        DroidPlannerPrefs mPrefs = DroidPlannerPrefs.getInstance(getApplicationContext());
+
+        String btAddress = mPrefs.getBluetoothDeviceAddress();
+        final @ConnectionType.Type int connectionType = mPrefs.getConnectionParameterType();
+
+        Uri tlogLoggingUri = TLogUtils.getTLogLoggingUri(getApplicationContext(),
+                connectionType, System.currentTimeMillis());
+
+        final long EVENTS_DISPATCHING_PERIOD = 200L; //MS
+
+        if (TextUtils.isEmpty(btAddress)) {
+            connParams = null;
+            startActivity(new Intent(getApplicationContext(), BluetoothDevicesActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        } else {
+            connParams = ConnectionParameter.newBluetoothConnection(btAddress,
+                    tlogLoggingUri, EVENTS_DISPATCHING_PERIOD);
         }
     }
 
@@ -362,8 +401,50 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         satelliteValueTextView.setText(String.format("%3.1f", droneSatellite.getSatellitesCount()+180));
     }
 
+    protected void updateGPS(){
+        Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
+
+        LatLong k = droneLocation.getPosition();
+        LatLng a = new LatLng(k.getLatitude(),k.getLongitude());
+
+        Marker droneloc = new Marker();
+        droneloc.setPosition(a);
+    }
+
+    protected void updateConnectedButton(Boolean isConnected) {
+        Button connectButton = (Button) findViewById(R.id.btnConnect);
+        if (isConnected) {
+            connectButton.setText("Disconnect");
+        } else {
+            connectButton.setText("Connect");
+        }
+    }
+
+    protected void updateArmButton() {
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        Button armButton = (Button) findViewById(R.id.btnArmTakeOff);
+
+        if (!this.drone.isConnected()) {
+            armButton.setVisibility(View.INVISIBLE);
+        } else {
+            armButton.setVisibility(View.VISIBLE);
+        }
+
+        if (vehicleState.isFlying()) {
+            // Land
+            armButton.setText("LAND");
+        } else if (vehicleState.isArmed()) {
+            // Take off
+            armButton.setText("TAKE OFF");
+        } else if (vehicleState.isConnected()) {
+            // Connected but not Armed
+            armButton.setText("ARM");
+        }
+    }
+
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
+        mNaverMap = naverMap;
         naverMap.setMapType(NaverMap.MapType.Satellite);
     }
 }
