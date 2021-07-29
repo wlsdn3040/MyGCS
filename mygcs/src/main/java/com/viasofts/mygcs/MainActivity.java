@@ -3,17 +3,13 @@ package com.viasofts.mygcs;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
-import android.graphics.SurfaceTexture;
 import android.net.Uri;
 import android.os.Handler;
-import android.os.HandlerThread;
 import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
-import android.view.Surface;
-import android.view.TextureView;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
@@ -22,10 +18,12 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import com.naver.maps.geometry.LatLng;
+import com.naver.maps.map.LocationTrackingMode;
 import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.util.FusedLocationSource;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
@@ -33,7 +31,6 @@ import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
 import com.o3dr.android.client.interfaces.TowerListener;
-import com.o3dr.android.client.utils.video.MediaCodecManager;
 import com.o3dr.services.android.lib.coordinate.LatLong;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
@@ -41,7 +38,6 @@ import com.o3dr.services.android.lib.drone.companion.solo.SoloAttributes;
 import com.o3dr.services.android.lib.drone.companion.solo.SoloState;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
-import com.o3dr.services.android.lib.drone.mission.item.command.YawCondition;
 import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
@@ -70,10 +66,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private static final int DEFAULT_USB_BAUD_RATE = 57600;
     private NaverMap mNaverMap;
     private MapView mapView;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
+    private FusedLocationSource locationSource;
 
     private Spinner modeSelector;
 
     ConnectionParameter connParams;
+    Marker droneloc = new Marker();
 
     Handler mainHandler;
 
@@ -87,6 +86,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         mapView = (MapView) findViewById(R.id.map_view);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+
+        locationSource =
+                new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
 
         final Context context = getApplicationContext();
         this.controlTower = new ControlTower(context);
@@ -105,6 +107,20 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
 
         mainHandler = new Handler(getApplicationContext().getMainLooper());
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,  @NonNull int[] grantResults) {
+        if (locationSource.onRequestPermissionsResult(
+                requestCode, permissions, grantResults)) {
+            if (!locationSource.isActivated()) { // 권한 거부됨
+                mNaverMap.setLocationTrackingMode(LocationTrackingMode.None);
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(
+                requestCode, permissions, grantResults);
     }
 
     @Override
@@ -151,6 +167,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             case AttributeEvent.STATE_ARMING:
 
                 updateArmButton();
+                updateBtnAltitude();
 
                 break;
 
@@ -158,9 +175,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 Type newDroneType = this.drone.getAttribute(AttributeType.TYPE);
                 if (newDroneType.getDroneType() != this.droneType) {
                     this.droneType = newDroneType.getDroneType();
-
                     updateVehicleModesForType(this.droneType);
-
                 }
                 break;
 
@@ -265,9 +280,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         if (this.drone.isConnected()) {
             this.drone.disconnect();
         } else {
-            ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
-//            this.drone.connect(connParams);
-            this.drone.connect(connectionParams);
+//            ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
+//            this.drone.connect(connectionParams);
+
+            this.drone.connect(connParams);
         }
     }
 
@@ -333,11 +349,12 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             });
 
-        } else if (vehicleState.isArmed()) {
+        }
+        else if (vehicleState.isArmed()) {
 
-            ControlApi.getApi(this.drone).takeoff(10, new AbstractCommandListener() {
+           ControlApi.getApi(this.drone).takeoff(alt, new AbstractCommandListener() {
 
-                @Override
+               @Override
                 public void onSuccess() {
                     alertUser("Taking off...");
                 }
@@ -353,7 +370,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             });
 
-        } else if (!vehicleState.isConnected()) {
+        }
+        else if (!vehicleState.isConnected()) {
 
             alertUser("Connect to a drone first");
         } else {
@@ -369,6 +387,56 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             });
         }
+    }
+
+    public void onAltitudeBtnTap(View view){
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+        Button add = (Button) findViewById(R.id.add0_5);
+        Button sub = (Button) findViewById(R.id.sub0_5);
+
+        if (sub.getVisibility()==view.GONE){
+            sub.setVisibility(view.VISIBLE);
+            add.setVisibility(view.VISIBLE);
+        }
+        else{
+            sub.setVisibility(view.GONE);
+            add.setVisibility(view.GONE);
+        }
+    }
+
+    double alt = 3;
+
+    public double onAddBtnTap(View view){
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+        Button btnAltitude = (Button) findViewById(R.id.btnAltitude);
+
+        if (alt>10)
+        {
+            alertUser("Can't set altitude higher than 10m");
+        }
+        else {
+            alt +=0.5;
+            btnAltitude.setText(alt + "m");
+        }
+        return alt;
+    }
+
+    public double onSubBtnTap(View view){
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+        Button btnAltitude = (Button) findViewById(R.id.btnAltitude);
+
+        if (alt<3)
+        {
+            alertUser("Can't set altitude lower than 3m");
+        }
+        else {
+            alt -=0.5;
+            btnAltitude.setText(alt + "m");
+        }
+        return alt;
     }
 
     protected void updateSpeed() {
@@ -392,23 +460,25 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     protected void updateYAW(){
         TextView YAWValueTextView = (TextView) findViewById(R.id.YAWValueTextView);
         Attitude droneYAW = this.drone.getAttribute(AttributeType.ATTITUDE);
-        YAWValueTextView.setText(String.format("%3.1f", droneYAW.getYaw())+ "deg");
+        YAWValueTextView.setText(String.format("%3.1f", droneYAW.getYaw()+180) + "deg");
+        float yaw = (float) (droneYAW.getYaw()+180);
+        droneloc.setAngle(yaw);
     }
 
     protected void updateSatellite(){
         TextView satelliteValueTextView = (TextView) findViewById(R.id.satelliteValueTextView);
         Gps droneSatellite = this.drone.getAttribute(AttributeType.GPS);
-        satelliteValueTextView.setText(String.format("%3.1f", droneSatellite.getSatellitesCount()+180));
+        satelliteValueTextView.setText(String.format("%3.1f", droneSatellite.getSatellitesCount()));
     }
 
     protected void updateGPS(){
         Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
 
-        LatLong k = droneLocation.getPosition();
-        LatLng a = new LatLng(k.getLatitude(),k.getLongitude());
+        LatLong loc = droneLocation.getPosition();
+        LatLng a = new LatLng(loc.getLatitude(),loc.getLongitude());
 
-        Marker droneloc = new Marker();
         droneloc.setPosition(a);
+        droneloc.setFlat(true);
     }
 
     protected void updateConnectedButton(Boolean isConnected) {
@@ -441,10 +511,24 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             armButton.setText("ARM");
         }
     }
+    protected void updateBtnAltitude(){
+
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        Button btnAltitude = (Button) findViewById(R.id.btnAltitude);
+
+        if(!vehicleState.isArmed()){
+            btnAltitude.setVisibility(View.INVISIBLE);
+        } else {
+            btnAltitude.setVisibility(View.VISIBLE);
+        }
+        btnAltitude.setText(alt + "m");
+    }
 
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
         mNaverMap = naverMap;
         naverMap.setMapType(NaverMap.MapType.Satellite);
+
+        naverMap.setLocationSource(locationSource);
     }
 }

@@ -47,7 +47,43 @@
         app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintEnd_toStartOf="@+id/btnConnect" />
 
+    <Button
+        android:id="@+id/btnAltitude"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:onClick="onAltitudeBtnTap"
+        android:textSize="10dp"
+        android:text="0m"
+        android:visibility="invisible"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/line" />
+
+    <Button
+        android:id="@+id/add0.5"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:onClick="onAddBtnTap"
+        android:text="+0.5m"
+        android:background="@drawable/button_round"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/btnAltitude" />
+
+    <Button
+        android:id="@+id/sub0.5"
+        android:layout_width="70dp"
+        android:layout_height="wrap_content"
+        android:onClick="onSubBtnTap"
+        android:text="-0.5m"
+        android:background="@drawable/button_round"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/add0.5" />
+
+
     <LinearLayout
+        android:id="@+id/line"
         android:layout_width="match_parent"
         android:layout_height="29dp"
         android:background="#80000000"
@@ -192,7 +228,7 @@
 
             <TextView
                 android:id="@+id/YAWLabelTextView"
-                android:layout_width="53dp"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_column="0"
                 android:paddingTop="5dp"
@@ -201,7 +237,7 @@
 
             <TextView
                 android:id="@+id/YAWValueTextView"
-                android:layout_width="wrap_content"
+                android:layout_width="88dp"
                 android:layout_height="wrap_content"
                 android:layout_column="1"
                 android:layout_gravity="left"
@@ -218,7 +254,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="tapTestBTN"
-        android:text="Test"
+        android:text="BLT"
         app:layout_constraintBottom_toTopOf="@+id/btnArmTakeOff"
         app:layout_constraintEnd_toEndOf="parent" />
 
