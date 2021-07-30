@@ -468,19 +468,19 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     protected void updateDroneLocation(){
         Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
         Attitude droneYAW = this.drone.getAttribute(AttributeType.ATTITUDE);
+
         double yaw = (double) (droneYAW.getYaw()+180);
 
-        LatLong loc = droneLocation.getPosition();
-        LatLng a = new LatLng(loc.getLatitude(),loc.getLongitude());
+        double latitude = droneLocation.getPosition().getLatitude();
+        double longtude = droneLocation.getPosition().getLongitude();
 
-        droneloc.setPosition(a);
-        droneloc.setFlat(true);
+        droneloc.setPosition(new LatLng(latitude, longtude));
         droneloc.setAngle((int)yaw);
-
+        droneloc.setMap(mNaverMap);
     }
 
     protected void updateGPS(){
-        Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
+//        Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
 //
 //        LatLong loc = droneLocation.getPosition();
 //        LatLng a = new LatLng(loc.getLatitude(),loc.getLongitude());
