@@ -1,11 +1,14 @@
 package com.viasofts.mygcs;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -66,13 +69,18 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private static final int DEFAULT_USB_BAUD_RATE = 57600;
     private NaverMap mNaverMap;
     private MapView mapView;
-    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1000;
-    private FusedLocationSource locationSource;
+    private Marker droneloc = new Marker();
+
+    private static final int PERMISSION_REQUEST_CODE = 1000;
+    private static final String[] PERMISSIONS = {
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+    };
+    private FusedLocationSource mLocationSource;
 
     private Spinner modeSelector;
 
     ConnectionParameter connParams;
-    Marker droneloc = new Marker();
 
     Handler mainHandler;
 
@@ -87,8 +95,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
 
-        locationSource =
-                new FusedLocationSource(this, LOCATION_PERMISSION_REQUEST_CODE);
+        mLocationSource =  new FusedLocationSource(this, PERMISSION_REQUEST_CODE);
 
         final Context context = getApplicationContext();
         this.controlTower = new ControlTower(context);
@@ -107,20 +114,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         });
 
         mainHandler = new Handler(getApplicationContext().getMainLooper());
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           @NonNull String[] permissions,  @NonNull int[] grantResults) {
-        if (locationSource.onRequestPermissionsResult(
-                requestCode, permissions, grantResults)) {
-            if (!locationSource.isActivated()) { // 권한 거부됨
-                mNaverMap.setLocationTrackingMode(LocationTrackingMode.None);
-            }
-            return;
-        }
-        super.onRequestPermissionsResult(
-                requestCode, permissions, grantResults);
     }
 
     @Override
@@ -207,7 +200,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 //                updateDistanceFromHome();
                 break;
             case AttributeEvent.GPS_POSITION:
+
                 updateGPS();
+                updateDroneLocation();
                 break;
 
             default:
@@ -280,10 +275,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         if (this.drone.isConnected()) {
             this.drone.disconnect();
         } else {
-//            ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
-//            this.drone.connect(connectionParams);
+            ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
+            this.drone.connect(connectionParams);
 
-            this.drone.connect(connParams);
+//            this.drone.connect(connParams);
         }
     }
 
@@ -461,24 +456,37 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         TextView YAWValueTextView = (TextView) findViewById(R.id.YAWValueTextView);
         Attitude droneYAW = this.drone.getAttribute(AttributeType.ATTITUDE);
         YAWValueTextView.setText(String.format("%3.1f", droneYAW.getYaw()+180) + "deg");
-        float yaw = (float) (droneYAW.getYaw()+180);
-        droneloc.setAngle(yaw);
+        double yaw = (double) (droneYAW.getYaw()+180);
     }
 
     protected void updateSatellite(){
         TextView satelliteValueTextView = (TextView) findViewById(R.id.satelliteValueTextView);
         Gps droneSatellite = this.drone.getAttribute(AttributeType.GPS);
-        satelliteValueTextView.setText(String.format("%3.1f", droneSatellite.getSatellitesCount()));
+        satelliteValueTextView.setText(String.format("%d", droneSatellite.getSatellitesCount()));
     }
 
-    protected void updateGPS(){
+    protected void updateDroneLocation(){
         Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
+        Attitude droneYAW = this.drone.getAttribute(AttributeType.ATTITUDE);
+        double yaw = (double) (droneYAW.getYaw()+180);
 
         LatLong loc = droneLocation.getPosition();
         LatLng a = new LatLng(loc.getLatitude(),loc.getLongitude());
 
         droneloc.setPosition(a);
         droneloc.setFlat(true);
+        droneloc.setAngle((int)yaw);
+
+    }
+
+    protected void updateGPS(){
+        Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
+//
+//        LatLong loc = droneLocation.getPosition();
+//        LatLng a = new LatLng(loc.getLatitude(),loc.getLongitude());
+//
+//        droneloc.setPosition(a);
+//        droneloc.setFlat(true);
     }
 
     protected void updateConnectedButton(Boolean isConnected) {
@@ -529,6 +537,22 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         mNaverMap = naverMap;
         naverMap.setMapType(NaverMap.MapType.Satellite);
 
-        naverMap.setLocationSource(locationSource);
+        mNaverMap.setLocationSource(mLocationSource);
+
+        naverMap.setLocationTrackingMode(LocationTrackingMode.None);
+        ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST_CODE);
+    }
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           @NonNull String[] permissions,  @NonNull int[] grantResults) {
+        if (mLocationSource.onRequestPermissionsResult(
+                requestCode, permissions, grantResults)) {
+            if (!mLocationSource.isActivated()) { // 권한 거부됨
+                mNaverMap.setLocationTrackingMode(LocationTrackingMode.None);
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(
+                requestCode, permissions, grantResults);
     }
 }
