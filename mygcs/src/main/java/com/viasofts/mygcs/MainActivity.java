@@ -2,6 +2,7 @@ package com.viasofts.mygcs;
 
 import android.Manifest;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
@@ -9,6 +10,7 @@ import android.net.Uri;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -270,24 +272,28 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         mainHandler.post(runnable);
     }
 
-
     public void onBtnConnectTap(View view) {
         if (this.drone.isConnected()) {
             this.drone.disconnect();
         } else {
-            ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
-            this.drone.connect(connectionParams);
-
-//            this.drone.connect(connParams);
+            new AlertDialog.Builder(this).setTitle("연결 종류 선택")
+                    .setMessage("").setPositiveButton("UDP", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    Toast.makeText(getApplicationContext(), "UDP 연결", Toast.LENGTH_SHORT).show();
+                    ConnectionParameter connectionParams = ConnectionParameter.newUdpConnection(null);
+                    drone.connect(connectionParams);
+                }
+            }).setNegativeButton("BLUETOOTH", new DialogInterface.OnClickListener() {
+                public void onClick (DialogInterface dialog,int whichButton){
+                    Toast.makeText(getApplicationContext(), "블루투스 연결", Toast.LENGTH_SHORT).show();
+                    drone.connect(connParams);
+                }
+            }).show();
         }
     }
 
     public void tapTestBTN(View view){
-            /*
-            ConnectionParameter connectionParams
-                    = ConnectionParameter.newUdpConnection(null);
-            this.drone.connect(connectionParams);
-             */
+
         DroidPlannerPrefs mPrefs = DroidPlannerPrefs.getInstance(getApplicationContext());
 
         String btAddress = mPrefs.getBluetoothDeviceAddress();
@@ -306,7 +312,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     tlogLoggingUri, EVENTS_DISPATCHING_PERIOD);
         }
     }
-
     public void onFlightModeSelected(View view) {
         VehicleMode vehicleMode = (VehicleMode) this.modeSelector.getSelectedItem();
 
@@ -343,49 +348,65 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                     alertUser("Unable to land the vehicle.");
                 }
             });
-
         }
         else if (vehicleState.isArmed()) {
 
-           ControlApi.getApi(this.drone).takeoff(alt, new AbstractCommandListener() {
+            new AlertDialog.Builder(this).setTitle("안전거리 유지!!")
+                    .setMessage("지정한 이륙고도까지 상승합니다.").setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    Toast.makeText(getApplicationContext(), "이륙합니다.", Toast.LENGTH_SHORT).show();
+                    ControlApi.getApi(drone).takeoff(alt, new AbstractCommandListener() {
 
-               @Override
-                public void onSuccess() {
-                    alertUser("Taking off...");
+                        @Override
+                        public void onSuccess() {
+                            alertUser("Taking off...");
+                        }
+
+                        @Override
+                        public void onError(int i) {
+                            alertUser("Unable to take off.");
+                        }
+
+                        @Override
+                        public void onTimeout() {
+                            alertUser("Unable to take off.");
+                        }
+                    });
                 }
-
-                @Override
-                public void onError(int i) {
-                    alertUser("Unable to take off.");
+            }).setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                public void onClick (DialogInterface dialog,int whichButton){
+                    Toast.makeText(getApplicationContext(), "이륙취소", Toast.LENGTH_SHORT).show();
                 }
-
-                @Override
-                public void onTimeout() {
-                    alertUser("Unable to take off.");
-                }
-            });
-
+            }).show();
         }
-        else if (!vehicleState.isConnected()) {
 
+        else if (!vehicleState.isConnected()) {
             alertUser("Connect to a drone first");
         } else {
-            VehicleApi.getApi(this.drone).arm(true, false, new SimpleCommandListener() {
-                @Override
-                public void onError(int executionError) {
-                    alertUser("Unable to arm vehicle.");
-                }
+            new AlertDialog.Builder(this).setTitle("모터를 가동하시겠습니까?")
+                    .setMessage("위험 : 모터가 고속으로 회전합니다.").setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int whichButton) {
+                    Toast.makeText(getApplicationContext(), "가동합니다.", Toast.LENGTH_SHORT).show();
 
-                @Override
-                public void onTimeout() {
-                    alertUser("Arming operation timed out.");
+                    VehicleApi.getApi(drone).arm(true, false, new SimpleCommandListener() {
+                        @Override
+                        public void onError(int executionError) {
+                            alertUser("Unable to arm vehicle.");
+                        }
+                        @Override
+                        public void onTimeout() {
+                            alertUser("Arming operation timed out.");
+                        }
+                    });
                 }
-            });
+            }).setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                public void onClick (DialogInterface dialog,int whichButton){
+                    Toast.makeText(getApplicationContext(), "가동 취소", Toast.LENGTH_SHORT).show();
+                }
+            }).show();
         }
     }
-
     public void onAltitudeBtnTap(View view){
-        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
 
         Button add = (Button) findViewById(R.id.add0_5);
         Button sub = (Button) findViewById(R.id.sub0_5);
@@ -531,6 +552,18 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
         btnAltitude.setText(alt + "m");
     }
+    public void onClick_confirm_takeoff(View view){
+        new AlertDialog.Builder(this).setTitle("모터를 가동하시겠습니까?")
+        .setMessage("위험 : 모터가 고속으로 회전합니다.").setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int whichButton) {
+
+            }
+    }).setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+                public void onClick (DialogInterface dialog,int whichButton){
+                }
+            });
+        }
+
 
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
