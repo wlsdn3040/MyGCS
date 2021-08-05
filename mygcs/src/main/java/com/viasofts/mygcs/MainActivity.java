@@ -6,6 +6,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -28,6 +30,7 @@ import com.naver.maps.map.MapView;
 import com.naver.maps.map.NaverMap;
 import com.naver.maps.map.OnMapReadyCallback;
 import com.naver.maps.map.overlay.Marker;
+import com.naver.maps.map.overlay.OverlayImage;
 import com.naver.maps.map.util.FusedLocationSource;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
@@ -37,6 +40,7 @@ import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.services.android.lib.coordinate.LatLong;
+import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.companion.solo.SoloAttributes;
@@ -47,6 +51,7 @@ import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
 import com.o3dr.services.android.lib.drone.property.Gps;
+import com.o3dr.services.android.lib.drone.property.GuidedState;
 import com.o3dr.services.android.lib.drone.property.Speed;
 import com.o3dr.services.android.lib.drone.property.State;
 import com.o3dr.services.android.lib.drone.property.Type;
@@ -58,10 +63,12 @@ import com.viasofts.mygcs.activites.helpers.BluetoothDevicesActivity;
 import com.viasofts.mygcs.utils.TLogUtils;
 import com.viasofts.mygcs.utils.prefs.DroidPlannerPrefs;
 import java.util.List;
+import java.util.ResourceBundle;
 
 public class MainActivity extends AppCompatActivity implements DroneListener, TowerListener, LinkListener, OnMapReadyCallback {
 
     private static final String TAG = MainActivity.class.getSimpleName();
+    private static Context MapsContext;
 
     private Drone drone;
     private int droneType = Type.TYPE_UNKNOWN;
@@ -203,8 +210,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 break;
             case AttributeEvent.GPS_POSITION:
 
-                updateGPS();
                 updateDroneLocation();
+
                 break;
 
             default:
@@ -259,7 +266,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         ArrayAdapter arrayAdapter = (ArrayAdapter) this.modeSelector.getAdapter();
         this.modeSelector.setSelection(arrayAdapter.getPosition(vehicleMode));
     }
-
     // Helper methods
     // ==========================================================
 
@@ -271,6 +277,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private void runOnMainThread(Runnable runnable) {
         mainHandler.post(runnable);
     }
+
 
     public void onBtnConnectTap(View view) {
         if (this.drone.isConnected()) {
@@ -290,6 +297,50 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 }
             }).show();
         }
+    }
+
+    public void GuideMode(final LatLong point) {
+
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+
+        if (vehicleState.getVehicleMode() == VehicleMode.COPTER_GUIDED) {
+            ControlApi.getApi(drone).goTo(point, true, null);
+        } else {
+            AlertDialog.Builder alt_bld = new AlertDialog.Builder(MainActivity.MapsContext);
+            alt_bld.setMessage("확인을 누르시면 가이드모드로 전환후 기체가 이동합니다.").setCancelable(false).setPositiveButton("확인", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int id) {
+                    VehicleApi.getApi(drone).setVehicleMode(VehicleMode.COPTER_GUIDED, new AbstractCommandListener() {
+                        @Override
+                        public void onSuccess() {
+                            ControlApi.getApi(drone).goTo(point, true, null);
+                        }
+
+                        @Override
+                        public void onError(int executionError) {
+                        }
+
+                        @Override
+                        public void onTimeout() {
+                        }
+                    });
+                }
+            }).setNegativeButton("취소", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int id) {
+                    dialog.cancel();
+                }
+            });
+            AlertDialog alert = alt_bld.create();
+            alert.show();
+        }
+    }
+
+    protected static boolean CheckGoal(final Drone drone, LatLng recentLatLng){
+        GuidedState guidedState = drone.getAttribute(AttributeType.GUIDED_STATE);
+        LatLng target = new LatLng(guidedState.getCoordinate().getLatitude(), guidedState.getCoordinate().getLongitude());
+
+        return target.distanceTo(recentLatLng) <=1;
     }
 
     public void tapTestBTN(View view){
@@ -421,10 +472,9 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
     }
 
-    double alt = 3;
+    double alt = 3; //altitude_setting
 
     public double onAddBtnTap(View view){
-        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
 
         Button btnAltitude = (Button) findViewById(R.id.btnAltitude);
 
@@ -440,7 +490,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
     public double onSubBtnTap(View view){
-        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
 
         Button btnAltitude = (Button) findViewById(R.id.btnAltitude);
 
@@ -477,7 +526,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         TextView YAWValueTextView = (TextView) findViewById(R.id.YAWValueTextView);
         Attitude droneYAW = this.drone.getAttribute(AttributeType.ATTITUDE);
         YAWValueTextView.setText(String.format("%3.1f", droneYAW.getYaw()+180) + "deg");
-        double yaw = (double) (droneYAW.getYaw()+180);
     }
 
     protected void updateSatellite(){
@@ -493,21 +541,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         double yaw = (double) (droneYAW.getYaw()+180);
 
         double latitude = droneLocation.getPosition().getLatitude();
-        double longtude = droneLocation.getPosition().getLongitude();
+        double longitude = droneLocation.getPosition().getLongitude();
 
-        droneloc.setPosition(new LatLng(latitude, longtude));
+        droneloc.setPosition(new LatLng(latitude, longitude));
         droneloc.setAngle((int)yaw);
         droneloc.setMap(mNaverMap);
-    }
-
-    protected void updateGPS(){
-//        Gps droneLocation = this.drone.getAttribute(AttributeType.GPS);
-//
-//        LatLong loc = droneLocation.getPosition();
-//        LatLng a = new LatLng(loc.getLatitude(),loc.getLongitude());
-//
-//        droneloc.setPosition(a);
-//        droneloc.setFlat(true);
     }
 
     protected void updateConnectedButton(Boolean isConnected) {
@@ -540,6 +578,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             armButton.setText("ARM");
         }
     }
+
     protected void updateBtnAltitude(){
 
         State vehicleState = this.drone.getAttribute(AttributeType.STATE);
@@ -552,29 +591,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
         btnAltitude.setText(alt + "m");
     }
-    public void onClick_confirm_takeoff(View view){
-        new AlertDialog.Builder(this).setTitle("모터를 가동하시겠습니까?")
-        .setMessage("위험 : 모터가 고속으로 회전합니다.").setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int whichButton) {
 
-            }
-    }).setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                public void onClick (DialogInterface dialog,int whichButton){
-                }
-            });
-        }
-
-
-    @Override
-    public void onMapReady(@NonNull NaverMap naverMap) {
-        mNaverMap = naverMap;
-        naverMap.setMapType(NaverMap.MapType.Satellite);
-
-        mNaverMap.setLocationSource(mLocationSource);
-
-        naverMap.setLocationTrackingMode(LocationTrackingMode.None);
-        ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST_CODE);
-    }
     @Override
     public void onRequestPermissionsResult(int requestCode,
                                            @NonNull String[] permissions,  @NonNull int[] grantResults) {
@@ -588,4 +605,27 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         super.onRequestPermissionsResult(
                 requestCode, permissions, grantResults);
     }
+
+    @Override
+    public void onMapReady(@NonNull NaverMap naverMap) {
+        mNaverMap = naverMap;
+        naverMap.setMapType(NaverMap.MapType.Satellite);
+
+        mNaverMap.setLocationSource(mLocationSource);
+
+        naverMap.setLocationTrackingMode(LocationTrackingMode.None);
+        ActivityCompat.requestPermissions(this, PERMISSIONS, PERMISSION_REQUEST_CODE);
+
+        final Marker mGuidedMarker = new Marker();
+
+        mNaverMap.setOnMapLongClickListener(new NaverMap.OnMapLongClickListener() {
+            @Override
+            public void onMapLongClick(@NonNull  PointF pointF, @NonNull LatLng latLng) {
+                mGuidedMarker.setMap(mNaverMap);
+                LatLong mGuidePoint = new LatLong(mGuidedMarker.getPosition().latitude, mGuidedMarker.getPosition().longitude);
+                GuideMode(mGuidePoint);
+            }
+        });
+    }
 }
+
