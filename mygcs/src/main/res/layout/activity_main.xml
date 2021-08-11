@@ -57,7 +57,7 @@
         android:visibility="invisible"
         android:background="@drawable/button_round"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/line" />
+        app:layout_constraintTop_toBottomOf="@+id/stateline" />
 
     <Button
         android:id="@+id/add0.5"
@@ -81,9 +81,56 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/add0.5" />
 
+    <Button
+        android:id="@+id/selectMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지도선택"
+        android:onClick="onMapBtnTap"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/btnArmTakeOff" />
+
+    <Button
+        android:id="@+id/basic"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="일반지도"
+        android:onClick="onBasicBtnTap"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/btnArmTakeOff"
+        app:layout_constraintBottom_toTopOf="@+id/selectMap" />
+
+    <Button
+        android:id="@+id/satellite"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="위성지도"
+        android:onClick="onSatelliteBtnTap"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/btnArmTakeOff"
+        app:layout_constraintBottom_toTopOf="@+id/basic" />
+
+    <Button
+        android:id="@+id/terrain"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지형도"
+        android:onClick="onTerrainBtnTap"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/btnArmTakeOff"
+        app:layout_constraintBottom_toTopOf="@+id/satellite" />
+
+
+    <android.support.v7.widget.RecyclerView
+        android:id="@+id/stateText"
+        android:layout_width="190dp"
+        android:layout_height="144dp"
+        app:layout_constraintStart_toStartOf="@+id/map"
+        app:layout_constraintTop_toBottomOf="@+id/stateline" />
+
 
     <LinearLayout
-        android:id="@+id/line"
+        android:id="@+id/stateline"
         android:layout_width="match_parent"
         android:layout_height="29dp"
         android:background="#80000000"
