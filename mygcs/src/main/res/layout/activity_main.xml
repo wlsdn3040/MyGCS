@@ -120,11 +120,69 @@
         app:layout_constraintEnd_toStartOf="@+id/btnArmTakeOff"
         app:layout_constraintBottom_toTopOf="@+id/satellite" />
 
+    <Button
+        android:id="@+id/holdMoveMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="잠금선택"
+        android:onClick="onHoldMoveBtnTap"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/selectMap" />
+
+    <Button
+        android:id="@+id/holdMapBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="맵잠금"
+        android:onClick="onHoldBtnTap"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/selectMap"
+        app:layout_constraintBottom_toTopOf="@+id/holdMoveMap" />
+
+    <Button
+        android:id="@+id/moveMapBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="맵이동"
+        android:onClick="onMoveBtnTap"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@+id/selectMap"
+        app:layout_constraintBottom_toTopOf="@+id/holdMapBtn" />
+
+    <Button
+        android:id="@+id/cadastralMap"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지적도"
+        android:onClick="onCadastralBtnTap"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/holdMoveMap" />
+
+    <Button
+        android:id="@+id/cadastralOn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지적도On"
+        android:visibility="gone"
+        android:onClick="onCadastralOnBtnTap"
+        app:layout_constraintBottom_toTopOf="@+id/cadastralMap"
+        app:layout_constraintEnd_toStartOf="@+id/holdMoveMap" />
+
+    <Button
+        android:id="@+id/cadastralOff"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="지적도Off"
+        android:visibility="gone"
+        android:onClick="onCadastralOffBtnTap"
+        app:layout_constraintBottom_toTopOf="@+id/cadastralOn"
+        app:layout_constraintEnd_toStartOf="@+id/holdMoveMap" />
+
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/stateText"
         android:layout_width="190dp"
-        android:layout_height="144dp"
+        android:layout_height="100dp"
         app:layout_constraintStart_toStartOf="@+id/map"
         app:layout_constraintTop_toBottomOf="@+id/stateline" />
 
