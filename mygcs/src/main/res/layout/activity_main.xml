@@ -178,14 +178,21 @@
         app:layout_constraintBottom_toTopOf="@+id/cadastralOn"
         app:layout_constraintEnd_toStartOf="@+id/holdMoveMap" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:onClick="onClearBtnTap"
+        android:text="CLEAR"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintStart_toStartOf="@id/map" />
+
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/stateText"
-        android:layout_width="190dp"
-        android:layout_height="100dp"
+        android:layout_width="230dp"
+        android:layout_height="160dp"
         app:layout_constraintStart_toStartOf="@+id/map"
         app:layout_constraintTop_toBottomOf="@+id/stateline" />
-
 
     <LinearLayout
         android:id="@+id/stateline"

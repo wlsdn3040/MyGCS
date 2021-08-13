@@ -6,6 +6,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -13,6 +14,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -296,6 +298,23 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         recyclerViewText adapter = new recyclerViewText(textInRecyclerView) ;
         mRecyclerView.setAdapter(adapter) ;
     }
+
+//    public class RecyclerViewDecoration extends RecyclerView.ItemDecoration {
+//
+//        private final int divHeight;
+//
+//        public RecyclerViewDecoration(int divHeight)
+//        {
+//            this.divHeight = divHeight;
+//        }
+//
+//        @Override
+//        public void getItemOffsets(Rect outRect, View view, RecyclerView parent, RecyclerView.State state)
+//        {
+//            super.getItemOffsets(outRect, view, parent, state);
+//            outRect.top = divHeight;
+//        }
+//    }
 
     // Helper methods
     // ==========================================================
@@ -785,6 +804,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         btnAltitude.setText(alt + "m");
     }
 
+
     class recyclerViewText extends RecyclerView.Adapter<recyclerViewText.ViewHolder> {
 
         private ArrayList<String> mData = null ;
@@ -825,9 +845,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         public int getItemCount() {
             return mData.size() ;
         }
-
     }
-
 
         @Override
     public void onRequestPermissionsResult(int requestCode,
@@ -841,6 +859,17 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
         super.onRequestPermissionsResult(
                 requestCode, permissions, grantResults);
+    }
+
+    public void onClearBtnTap(View view){
+
+        mPolyline.setMap(null);
+        mLocationCollection.clear();
+        textInRecyclerView.clear();
+        recyclerViewText adapter = new recyclerViewText(textInRecyclerView) ;
+        mRecyclerView.setAdapter(adapter);
+        mGuidedMarker.setMap(null);
+        ControlApi.getApi(drone).pauseAtCurrentLocation(null);
     }
 
     @Override
