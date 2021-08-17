@@ -6,7 +6,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
-import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Handler;
 import android.support.annotation.NonNull;
@@ -14,7 +13,6 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.text.TextUtils;
@@ -96,9 +94,15 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private double latitude;
     private double longitude;
     private boolean camMove = false;
+    private double FW = 1; // Flight Width Setting
+    private double AB = 10; // AB_Distance_Setting
+    private PolylineOverlay abPolyline = new PolylineOverlay();
+    private Marker A = new Marker();
+    private Marker B = new Marker();
+    private LatLng APoint;
+    private LatLng BPoint;
 
     LatLng droneposition;
-
 
     private static final int PERMISSION_REQUEST_CODE = 1000;
     private static final String[] PERMISSIONS = {
@@ -608,7 +612,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
         Button btnAltitude = (Button) findViewById(R.id.btnAltitude);
 
-        if (alt<3)
+        if (alt<3.5)
         {
             alertUser("Can't set altitude lower than 3m");
         }
@@ -617,6 +621,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             btnAltitude.setText(alt + "m");
         }
         return alt;
+
     }
 
     public void onHoldMoveBtnTap(View view){
@@ -792,15 +797,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     }
 
     protected void updateBtnAltitude(){
-
-        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
         Button btnAltitude = (Button) findViewById(R.id.btnAltitude);
 
-        if(!vehicleState.isArmed()){
-            btnAltitude.setVisibility(View.INVISIBLE);
-        } else {
-            btnAltitude.setVisibility(View.VISIBLE);
-        }
         btnAltitude.setText(alt + "m");
     }
 
@@ -870,6 +868,126 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         mRecyclerView.setAdapter(adapter);
         mGuidedMarker.setMap(null);
         ControlApi.getApi(drone).pauseAtCurrentLocation(null);
+    }
+
+    public void onMissionBtnTap(View view){
+        Button btnAB = (Button) findViewById(R.id.btnAB);
+        Button btnPolygon = (Button) findViewById(R.id.btnPolygon);
+        Button btnCancel = (Button) findViewById(R.id.btnCancel);
+
+        if (btnAB.getVisibility() == view.GONE){
+            btnAB.setVisibility(view.VISIBLE);
+            btnPolygon.setVisibility(view.VISIBLE);
+            btnCancel.setVisibility(view.VISIBLE);
+        }
+        else{
+            btnAB.setVisibility(view.GONE);
+            btnPolygon.setVisibility(view.GONE);
+            btnCancel.setVisibility(view.GONE);
+        }
+    }
+
+    public void onFlightWidthBtn(View view) {
+        Button btnAddW = (Button) findViewById(R.id.btnFlightWidthAdd0_5);
+        Button btnSubW = (Button) findViewById(R.id.btnFlightWidthSub0_5);
+
+        if (btnAddW.getVisibility() == view.GONE) {
+            btnAddW.setVisibility(view.VISIBLE);
+            btnSubW.setVisibility(view.VISIBLE);
+        } else {
+            btnAddW.setVisibility(view.GONE);
+            btnSubW.setVisibility(view.GONE);
+        }
+    }
+
+    public void onABDistanceBtnTap(View view){
+            Button btnADD10 = (Button) findViewById(R.id.btnABDistanceAdd10);
+            Button btnSUB10 = (Button) findViewById(R.id.btnABDistanceSub10);
+
+            if (btnADD10.getVisibility() == view.GONE) {
+                btnADD10.setVisibility(view.VISIBLE);
+                btnSUB10.setVisibility(view.VISIBLE);
+            } else {
+                btnADD10.setVisibility(view.GONE);
+                btnSUB10.setVisibility(view.GONE);
+            }
+        }
+
+    public void onABBtnTap(View view){
+        Button btnMission = (Button) findViewById(R.id.btnMission);
+
+        int count = 0;
+        btnMission.setText("AB");
+
+        mNaverMap.setOnMapClickListener((point, coord) ->{
+            APoint = new LatLng(coord.latitude, coord.longitude);
+            A.setPosition(APoint);
+            A.setMap(mNaverMap);
+        });
+    }
+
+    public void onPolyBtnTap(View view){
+        Button btnMission = (Button) findViewById(R.id.btnMission);
+
+        btnMission.setText("다각형");
+    }
+
+    public void onCancelBtnTap(View view){
+        Button btnMission = (Button) findViewById(R.id.btnMission);
+
+        btnMission.setText("임무");
+    }
+
+    public double onFwAddBtnTap(View view){
+        Button btnFw = (Button) findViewById(R.id.btnFlightWidth);
+
+        if (FW>9.9){
+            alertUser("Can't set FlightWidth longer than 10m");
+        }
+        else{
+            FW += 0.5;
+            btnFw.setText("비행폭\n" + FW + "m");
+        }
+        return FW;
+    }
+
+    public double onFwSubBtnTap(View view){
+        Button btnFw = (Button) findViewById(R.id.btnFlightWidth);
+
+        if (FW<1.1){
+            alertUser("Can't set FlightWidth shorter than 1m");
+        }
+        else{
+            FW -= 0.5;
+            btnFw.setText("비행폭\n" + FW + "m");
+        }
+        return FW;
+    }
+
+    public double onDisAddBtnTap(View view){
+        Button btnDis= (Button) findViewById(R.id.btnABDistance);
+
+        if (AB>99){
+            alertUser("Can't set AtoB longer than 100m");
+        }
+        else{
+            AB += 10;
+            btnDis.setText("AB거리\n" + AB + "m");
+        }
+        return AB;
+    }
+
+    public double onDisSubBtnTap(View view){
+        Button btnDis= (Button) findViewById(R.id.btnABDistance);
+
+        if (AB<11){
+            alertUser("Can't set AtoB shorter than 10m");
+        }
+        else{
+            AB -= 10;
+            btnDis.setText("AB거리\n" + AB + "m");
+        }
+        return AB;
     }
 
     @Override

@@ -50,19 +50,19 @@
     <Button
         android:id="@+id/btnAltitude"
         android:layout_width="70dp"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:onClick="onAltitudeBtnTap"
         android:textSize="10dp"
         android:text="0m"
-        android:visibility="invisible"
         android:background="@drawable/button_round"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/stateline" />
+        app:layout_constraintTop_toBottomOf="@+id/stateLine" />
+
 
     <Button
         android:id="@+id/add0.5"
         android:layout_width="70dp"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:onClick="onAddBtnTap"
         android:text="+0.5m"
         android:background="@drawable/button_round"
@@ -73,7 +73,7 @@
     <Button
         android:id="@+id/sub0.5"
         android:layout_width="70dp"
-        android:layout_height="wrap_content"
+        android:layout_height="40dp"
         android:onClick="onSubBtnTap"
         android:text="-0.5m"
         android:background="@drawable/button_round"
@@ -186,16 +186,136 @@
         app:layout_constraintBottom_toBottomOf="@+id/map"
         app:layout_constraintStart_toStartOf="@id/map" />
 
+    <Button
+        android:id="@+id/btnMission"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:onClick="onMissionBtnTap"
+        android:textSize="10dp"
+        android:text="임무"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnAltitude"
+        app:layout_constraintTop_toBottomOf="@+id/stateLine" />
+
+    <Button
+        android:id="@+id/btnAB"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:textSize="10dp"
+        android:text="AB"
+        android:onClick="onABBtnTap"
+        android:visibility="gone"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnAltitude"
+        app:layout_constraintTop_toBottomOf="@+id/btnMission" />
+
+    <Button
+        android:id="@+id/btnPolygon"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:textSize="10dp"
+        android:text="다각형"
+        android:onClick="onPolyBtnTap"
+        android:visibility="gone"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnAltitude"
+        app:layout_constraintTop_toBottomOf="@+id/btnAB" />
+
+    <Button
+        android:id="@+id/btnCancel"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:textSize="10dp"
+        android:text="취소"
+        android:onClick="onCancelBtnTap"
+        android:visibility="gone"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnAltitude"
+        app:layout_constraintTop_toBottomOf="@+id/btnPolygon" />
+
+
+    <Button
+        android:id="@+id/btnFlightWidth"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:onClick="onFlightWidthBtn"
+        android:textSize="10dp"
+        android:text="비행폭\n0m"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnMission"
+        app:layout_constraintTop_toBottomOf="@+id/stateLine" />
+
+    <Button
+        android:id="@+id/btnFlightWidthAdd0.5"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:textSize="10dp"
+        android:text="+0.5m"
+        android:onClick="onFwAddBtnTap"
+        android:visibility="gone"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnMission"
+        app:layout_constraintTop_toBottomOf="@+id/btnFlightWidth" />
+
+    <Button
+        android:id="@+id/btnFlightWidthSub0.5"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:textSize="10dp"
+        android:text="-0.5m"
+        android:onClick="onFwSubBtnTap"
+        android:visibility="gone"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnMission"
+        app:layout_constraintTop_toBottomOf="@+id/btnFlightWidthAdd0.5"/>
+
+    <Button
+        android:id="@+id/btnABDistance"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:onClick="onABDistanceBtnTap"
+        android:textSize="10dp"
+        android:text="AB거리\n0m"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnFlightWidth"
+        app:layout_constraintTop_toBottomOf="@+id/stateLine" />
+
+    <Button
+        android:id="@+id/btnABDistanceAdd10"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:textSize="10dp"
+        android:text="+10m"
+        android:onClick="onDisAddBtnTap"
+        android:visibility="gone"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnFlightWidth"
+        app:layout_constraintTop_toBottomOf="@+id/btnABDistance" />
+
+    <Button
+        android:id="@+id/btnABDistanceSub10"
+        android:layout_width="70dp"
+        android:layout_height="40dp"
+        android:textSize="10dp"
+        android:text="-10m"
+        android:onClick="onDisSubBtnTap"
+        android:visibility="gone"
+        android:background="@drawable/button_round"
+        app:layout_constraintEnd_toStartOf="@+id/btnFlightWidth"
+        app:layout_constraintTop_toBottomOf="@+id/btnABDistanceAdd10" />
+
+
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/stateText"
         android:layout_width="230dp"
         android:layout_height="160dp"
         app:layout_constraintStart_toStartOf="@+id/map"
-        app:layout_constraintTop_toBottomOf="@+id/stateline" />
+        app:layout_constraintTop_toBottomOf="@+id/stateLine" />
+
 
     <LinearLayout
-        android:id="@+id/stateline"
+        android:id="@+id/stateLine"
         android:layout_width="match_parent"
         android:layout_height="29dp"
         android:background="#80000000"
@@ -303,8 +423,6 @@
                 android:paddingTop="5dp"
                 android:paddingBottom="5dp"
                 android:text="0V" />
-
-
         </TableRow>
 
         <TableRow
@@ -357,7 +475,6 @@
                 android:paddingBottom="5dp"
                 android:text="0deg" />
         </TableRow>
-
 
     </LinearLayout>
 
