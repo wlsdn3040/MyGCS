@@ -61,6 +61,7 @@ import com.o3dr.services.android.lib.drone.property.VehicleMode;
 import com.o3dr.services.android.lib.gcs.link.LinkConnectionStatus;
 import com.o3dr.services.android.lib.model.AbstractCommandListener;
 import com.o3dr.services.android.lib.model.SimpleCommandListener;
+import com.o3dr.services.android.lib.util.MathUtils;
 import com.viasofts.mygcs.activites.helpers.BluetoothDevicesActivity;
 import com.viasofts.mygcs.utils.TLogUtils;
 import com.viasofts.mygcs.utils.prefs.DroidPlannerPrefs;
@@ -96,11 +97,11 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private boolean camMove = false;
     private double FW = 1; // Flight Width Setting
     private double AB = 10; // AB_Distance_Setting
+
     private PolylineOverlay abPolyline = new PolylineOverlay();
+    private ArrayList<LatLng> points = new ArrayList<>();
     private Marker A = new Marker();
     private Marker B = new Marker();
-    private LatLng APoint;
-    private LatLng BPoint;
 
     LatLng droneposition;
 
@@ -916,15 +917,54 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     public void onABBtnTap(View view){
         Button btnMission = (Button) findViewById(R.id.btnMission);
 
-        int count = 0;
         btnMission.setText("AB");
 
-        mNaverMap.setOnMapClickListener((point, coord) ->{
-            APoint = new LatLng(coord.latitude, coord.longitude);
-            A.setPosition(APoint);
-            A.setMap(mNaverMap);
+        double distance = A.getPosition().distanceTo(B.getPosition());;
+        double angle = getAngle(B.getPosition(),A.getPosition());
+
+        mNaverMap.setOnMapClickListener((point, latLng) ->{
+            points.add(new LatLng(latLng.latitude, latLng.longitude));
+            if (points.size()>2){
+                alertUser("2개의 지점을 선택할 수 없습니다.");
+                points.clear();
+                A.setMap(null);
+                B.setMap(null);
+            }
+            else if(points.size() == 1){
+                A.setPosition(points.get(0));;
+                A.setMap(mNaverMap);
+                A.setCaptionText("A");
+            }
+            else if(points.size() == 2){
+                B.setPosition(points.get(1));
+                B.setMap(mNaverMap);
+                B.setCaptionText("B");
+            }
         });
     }
+
+    public double getAngle(LatLng position, LatLng position1) {
+
+        double dx = position1.longitude - position.longitude;
+        double dy = position1.latitude - position.latitude;
+
+        double rad= Math.atan2(dx, dy);
+        double degree = (rad*180)/Math.PI ;
+
+        return degree;
+    }
+
+    public void drawLine(){
+
+        LatLong Ap = new LatLong(points.get(0).latitude, points.get(0).longitude);
+        LatLong Bp = new LatLong(points.get(1).latitude, points.get(1).longitude);
+
+        double bearing = MathUtils.getHeadingFromCoordinates(Ap, Bp);
+
+        MathUtils.newCoordFromBearingAndDistance(Bp, 90, FW);
+
+    }
+
 
     public void onPolyBtnTap(View view){
         Button btnMission = (Button) findViewById(R.id.btnMission);
@@ -989,7 +1029,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         }
         return AB;
     }
-
     @Override
     public void onMapReady(@NonNull NaverMap naverMap) {
 

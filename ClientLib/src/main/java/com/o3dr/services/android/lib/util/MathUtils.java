@@ -367,7 +367,9 @@ public class MathUtils {
      * @param toLoc     end lat/long position
      * @return          heading in degrees
      */
+
     public static double getHeadingFromCoordinates(LatLong fromLoc, LatLong toLoc) {
+
         double fLat = Math.toRadians(fromLoc.getLatitude());
         double fLng = Math.toRadians(fromLoc.getLongitude());
         double tLat = Math.toRadians(toLoc.getLatitude());
@@ -383,6 +385,7 @@ public class MathUtils {
         } else {
             return 360 + degree;
         }
+
     }
 
     /**
