@@ -95,13 +95,16 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private double latitude;
     private double longitude;
     private boolean camMove = false;
-    private double FW = 1; // Flight Width Setting
+    private double FW = 3; // Flight Width Setting
     private double AB = 10; // AB_Distance_Setting
+    private ArrayList<LatLong> points2 = new ArrayList<>();
 
     private PolylineOverlay abPolyline = new PolylineOverlay();
     private ArrayList<LatLng> points = new ArrayList<>();
     private Marker A = new Marker();
     private Marker B = new Marker();
+    private double degree;
+    private double distance;
 
     LatLng droneposition;
 
@@ -919,7 +922,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
         btnMission.setText("AB");
 
-        double distance = A.getPosition().distanceTo(B.getPosition());;
         double angle = getAngle(B.getPosition(),A.getPosition());
 
         mNaverMap.setOnMapClickListener((point, latLng) ->{
@@ -927,11 +929,13 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             if (points.size()>2){
                 alertUser("2개의 지점을 선택할 수 없습니다.");
                 points.clear();
+                points2.clear();
                 A.setMap(null);
                 B.setMap(null);
+                abPolyline.setMap(null);
             }
             else if(points.size() == 1){
-                A.setPosition(points.get(0));;
+                A.setPosition(points.get(0));
                 A.setMap(mNaverMap);
                 A.setCaptionText("A");
             }
@@ -939,6 +943,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 B.setPosition(points.get(1));
                 B.setMap(mNaverMap);
                 B.setCaptionText("B");
+
+                distance = A.getPosition().distanceTo(B.getPosition());
+
+                drawLine();
             }
         });
     }
@@ -949,7 +957,7 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         double dy = position1.latitude - position.latitude;
 
         double rad= Math.atan2(dx, dy);
-        double degree = (rad*180)/Math.PI ;
+        degree = (rad*180)/Math.PI ;
 
         return degree;
     }
@@ -959,10 +967,30 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         LatLong Ap = new LatLong(points.get(0).latitude, points.get(0).longitude);
         LatLong Bp = new LatLong(points.get(1).latitude, points.get(1).longitude);
 
-        double bearing = MathUtils.getHeadingFromCoordinates(Ap, Bp);
+        double degree1 = MathUtils.getHeadingFromCoordinates(Ap, Bp);
 
-        MathUtils.newCoordFromBearingAndDistance(Bp, 90, FW);
+        points2.add(MathUtils.newCoordFromBearingAndDistance(Bp, 90 + degree1, FW));
+        points2.add(MathUtils.newCoordFromBearingAndDistance(Ap, 90 + degree1, FW));
 
+        double p = AB;
+        double a = AB/FW;
+
+        while (FW < p){
+            for (int i = 0; i< a; i++) {
+
+                points2.add(MathUtils.newCoordFromBearingAndDistance(points2.get(i), 90 + degree1, FW));
+                points2.add(MathUtils.newCoordFromBearingAndDistance(points2.get(i+1), 90 + degree1, FW));
+                i++;
+                p = p - FW;
+                for (int j=0; j<points2.size(); j++){
+                    points.add(new LatLng(points2.get(j).getLatitude(), points2.get(j).getLongitude()));
+                }
+            }
+        }
+        abPolyline.setCoords(points);
+        abPolyline.setWidth(10);
+        abPolyline.setColor(Color.YELLOW);
+        abPolyline.setMap(mNaverMap);
     }
 
 
@@ -994,8 +1022,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     public double onFwSubBtnTap(View view){
         Button btnFw = (Button) findViewById(R.id.btnFlightWidth);
 
-        if (FW<1.1){
-            alertUser("Can't set FlightWidth shorter than 1m");
+        if (FW<3.1){
+            alertUser("Can't set FlightWidth shorter than 3m");
         }
         else{
             FW -= 0.5;
