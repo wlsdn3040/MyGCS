@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.ActivityInfo;
 import android.graphics.Color;
 import android.net.Uri;
+import android.os.BadParcelableException;
 import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
@@ -66,6 +67,7 @@ import com.viasofts.mygcs.activites.helpers.BluetoothDevicesActivity;
 import com.viasofts.mygcs.utils.TLogUtils;
 import com.viasofts.mygcs.utils.prefs.DroidPlannerPrefs;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -97,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private boolean camMove = false;
     private double FW = 3; // Flight Width Setting
     private double AB = 10; // AB_Distance_Setting
-    private ArrayList<LatLong> points2 = new ArrayList<>();
 
     private PolylineOverlay abPolyline = new PolylineOverlay();
     private ArrayList<LatLng> points = new ArrayList<>();
@@ -105,6 +106,8 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
     private Marker B = new Marker();
     private double degree;
     private double distance;
+    private LatLong Ap;
+    private LatLong Bp;
 
     LatLng droneposition;
 
@@ -872,6 +875,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
         mRecyclerView.setAdapter(adapter);
         mGuidedMarker.setMap(null);
         ControlApi.getApi(drone).pauseAtCurrentLocation(null);
+        A.setMap(null);
+        B.setMap(null);
+        points.clear();
+        abPolyline.setMap(null);
     }
 
     public void onMissionBtnTap(View view){
@@ -919,35 +926,35 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     public void onABBtnTap(View view){
         Button btnMission = (Button) findViewById(R.id.btnMission);
+        Button btnAB = (Button) findViewById(R.id.btnAB);
 
         btnMission.setText("AB");
+        btnAB.setText("A지점");
 
         double angle = getAngle(B.getPosition(),A.getPosition());
 
-        mNaverMap.setOnMapClickListener((point, latLng) ->{
-            points.add(new LatLng(latLng.latitude, latLng.longitude));
-            if (points.size()>2){
-                alertUser("2개의 지점을 선택할 수 없습니다.");
-                points.clear();
-                points2.clear();
-                A.setMap(null);
-                B.setMap(null);
-                abPolyline.setMap(null);
-            }
-            else if(points.size() == 1){
-                A.setPosition(points.get(0));
+        mNaverMap.setOnMapClickListener((point, coord) ->{
+            if (btnAB.getText().equals("A지점")){
+                A.setPosition(coord);
                 A.setMap(mNaverMap);
                 A.setCaptionText("A");
+                btnAB.setText("B지점");
             }
-            else if(points.size() == 2){
-                B.setPosition(points.get(1));
+            else if(btnAB.getText().equals("B지점")){
+                B.setPosition(coord);
                 B.setMap(mNaverMap);
                 B.setCaptionText("B");
 
-                distance = A.getPosition().distanceTo(B.getPosition());
-
                 drawLine();
+                btnAB.setText("경로");
             }
+            else if(btnAB.getText().equals("경로")){
+                A.setMap(null);
+                B.setMap(null);
+                points.clear();
+                abPolyline.setMap(null);
+            }
+
         });
     }
 
@@ -964,32 +971,47 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     public void drawLine(){
 
-        LatLong Ap = new LatLong(points.get(0).latitude, points.get(0).longitude);
-        LatLong Bp = new LatLong(points.get(1).latitude, points.get(1).longitude);
+        Ap = new LatLong(A.getPosition().latitude, A.getPosition().longitude);
+        Bp = new LatLong(B.getPosition().latitude, B.getPosition().longitude);
+
+        LatLong a1;
+        LatLong b1;
+
+        int num = 2;
 
         double degree1 = MathUtils.getHeadingFromCoordinates(Ap, Bp);
 
-        points2.add(MathUtils.newCoordFromBearingAndDistance(Bp, 90 + degree1, FW));
-        points2.add(MathUtils.newCoordFromBearingAndDistance(Ap, 90 + degree1, FW));
+        Collections.addAll(points, new LatLng(Ap.getLatitude(), Ap.getLongitude()), new LatLng(Bp.getLatitude(), Bp.getLongitude()));
 
-        double p = AB;
-        double a = AB/FW;
+        b1 = MathUtils.newCoordFromBearingAndDistance(Bp, 90+degree1, FW);
+        a1 = MathUtils.newCoordFromBearingAndDistance(Ap, 90+degree1, FW);
 
-        while (FW < p){
-            for (int i = 0; i< a; i++) {
+        Collections.addAll(points, new LatLng(b1.getLatitude(), b1.getLongitude()), new LatLng(a1.getLatitude(), a1.getLongitude()));
 
-                points2.add(MathUtils.newCoordFromBearingAndDistance(points2.get(i), 90 + degree1, FW));
-                points2.add(MathUtils.newCoordFromBearingAndDistance(points2.get(i+1), 90 + degree1, FW));
-                i++;
-                p = p - FW;
-                for (int j=0; j<points2.size(); j++){
-                    points.add(new LatLng(points2.get(j).getLatitude(), points2.get(j).getLongitude()));
-                }
+        int p = (int)(AB/FW);
+
+        while (p>=0){
+
+            if (num%2==0){
+                a1 = MathUtils.newCoordFromBearingAndDistance(Ap, 90+degree1, FW*num);
+                Collections.addAll(points, new LatLng(a1.getLatitude(), a1.getLongitude()));
+                b1 = MathUtils.newCoordFromBearingAndDistance(Bp, 90+degree1, FW*num);
+                Collections.addAll(points, new LatLng(b1.getLatitude(), b1.getLongitude()));
             }
+            else if(num%2==1){
+                b1 = MathUtils.newCoordFromBearingAndDistance(Bp, 90+degree1, FW*num);
+                Collections.addAll(points, new LatLng(b1.getLatitude(), b1.getLongitude()));
+                a1 = MathUtils.newCoordFromBearingAndDistance(Ap, 90+degree1, FW*num);
+                Collections.addAll(points, new LatLng(a1.getLatitude(), a1.getLongitude()));
+            }
+
+            num++;
+            p--;
         }
+
         abPolyline.setCoords(points);
         abPolyline.setWidth(10);
-        abPolyline.setColor(Color.YELLOW);
+        abPolyline.setColor(Color.BLACK);
         abPolyline.setMap(mNaverMap);
     }
 
