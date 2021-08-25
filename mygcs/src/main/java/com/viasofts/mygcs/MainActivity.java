@@ -39,17 +39,21 @@ import com.naver.maps.map.util.FusedLocationSource;
 import com.o3dr.android.client.ControlTower;
 import com.o3dr.android.client.Drone;
 import com.o3dr.android.client.apis.ControlApi;
+import com.o3dr.android.client.apis.MissionApi;
 import com.o3dr.android.client.apis.VehicleApi;
 import com.o3dr.android.client.interfaces.DroneListener;
 import com.o3dr.android.client.interfaces.LinkListener;
 import com.o3dr.android.client.interfaces.TowerListener;
 import com.o3dr.services.android.lib.coordinate.LatLong;
+import com.o3dr.services.android.lib.coordinate.LatLongAlt;
 import com.o3dr.services.android.lib.drone.attribute.AttributeEvent;
 import com.o3dr.services.android.lib.drone.attribute.AttributeType;
 import com.o3dr.services.android.lib.drone.companion.solo.SoloAttributes;
 import com.o3dr.services.android.lib.drone.companion.solo.SoloState;
 import com.o3dr.services.android.lib.drone.connection.ConnectionParameter;
 import com.o3dr.services.android.lib.drone.connection.ConnectionType;
+import com.o3dr.services.android.lib.drone.mission.Mission;
+import com.o3dr.services.android.lib.drone.mission.item.spatial.Waypoint;
 import com.o3dr.services.android.lib.drone.property.Altitude;
 import com.o3dr.services.android.lib.drone.property.Attitude;
 import com.o3dr.services.android.lib.drone.property.Battery;
@@ -250,7 +254,10 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
                 updateDroneLocation();
 
                 break;
-
+            case AttributeEvent.MISSION_SENT:
+                addRecyclerViewText("미션비행수행");
+                MissionApi.getApi(drone).startMission(true,true,null);
+                break;
             default:
                 // Log.i("DRONE_EVENT", event); //Uncomment to see events from the drone
                 break;
@@ -926,36 +933,72 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
 
     public void onABBtnTap(View view){
         Button btnMission = (Button) findViewById(R.id.btnMission);
-        Button btnAB = (Button) findViewById(R.id.btnAB);
+        Button abMission = (Button) findViewById(R.id.abMissionBtn);
 
         btnMission.setText("AB");
-        btnAB.setText("A지점");
+
+        if (abMission.getVisibility() == view.GONE) {
+            abMission.setVisibility(view.VISIBLE);
+        } else {
+            abMission.setVisibility(view.GONE);
+        }
 
         double angle = getAngle(B.getPosition(),A.getPosition());
 
         mNaverMap.setOnMapClickListener((point, coord) ->{
-            if (btnAB.getText().equals("A지점")){
+            if (abMission.getText().equals("A지점설정")){
                 A.setPosition(coord);
                 A.setMap(mNaverMap);
                 A.setCaptionText("A");
-                btnAB.setText("B지점");
+                abMission.setText("B지점설정");
             }
-            else if(btnAB.getText().equals("B지점")){
+            else if(abMission.getText().equals("B지점설정")){
                 B.setPosition(coord);
                 B.setMap(mNaverMap);
                 B.setCaptionText("B");
 
                 drawLine();
-                btnAB.setText("경로");
+                abMission.setText("임무전송");
             }
-            else if(btnAB.getText().equals("경로")){
-                A.setMap(null);
-                B.setMap(null);
-                points.clear();
-                abPolyline.setMap(null);
-            }
-
         });
+    }
+
+    public void onABMissiontap(View view){
+        State vehicleState = this.drone.getAttribute(AttributeType.STATE);
+        Button abMission = (Button) findViewById(R.id.abMissionBtn);
+
+        if (abMission.getText().equals("임무전송")){
+
+            abMission.setText("임무시작");
+        }
+        else if (abMission.getText().equals("임무시작")) {
+
+            Mission mission = new Mission();
+            ArrayList<Waypoint> abWay = new ArrayList<>();
+            for (int i=0; i<points.size(); i++){
+                abWay.add(new Waypoint());
+                abWay.get(i).setCoordinate(new LatLongAlt(points.get(i).latitude , points.get(i).longitude,FW));
+                abWay.get(i).setDelay(1);
+                mission.addMissionItem(i,abWay.get(i));
+            }
+            MissionApi.getApi(drone).setMission(mission,true);
+            abMission.setText("임무중지");
+        }
+        else if(abMission.getText().equals("임무중지")){
+            abMission.setText("임무시작");
+            VehicleApi.getApi(this.drone).setVehicleMode(VehicleMode.COPTER_LOITER, new AbstractCommandListener() {
+                @Override
+                public void onSuccess() {
+                    alertUser("로이터 모드로 변경");
+                }
+                @Override
+                public void onError(int executionError) {
+                }
+                @Override
+                public void onTimeout() {
+                }
+            });
+        }
     }
 
     public double getAngle(LatLng position, LatLng position1) {
@@ -1008,7 +1051,6 @@ public class MainActivity extends AppCompatActivity implements DroneListener, To
             num++;
             p--;
         }
-
         abPolyline.setCoords(points);
         abPolyline.setWidth(10);
         abPolyline.setColor(Color.BLACK);

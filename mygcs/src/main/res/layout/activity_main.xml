@@ -304,7 +304,15 @@
         app:layout_constraintEnd_toStartOf="@+id/btnFlightWidth"
         app:layout_constraintTop_toBottomOf="@+id/btnABDistanceAdd10" />
 
-
+    <Button
+        android:id="@+id/abMissionBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="A지점설정"
+        android:visibility="gone"
+        android:onClick="onABMissiontap"
+        app:layout_constraintBottom_toBottomOf="@+id/map"
+        app:layout_constraintEnd_toStartOf="@+id/cadastralMap" />
 
     <android.support.v7.widget.RecyclerView
         android:id="@+id/stateText"
@@ -312,6 +320,8 @@
         android:layout_height="160dp"
         app:layout_constraintStart_toStartOf="@+id/map"
         app:layout_constraintTop_toBottomOf="@+id/stateLine" />
+
+
 
 
     <LinearLayout
